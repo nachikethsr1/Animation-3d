@@ -647,14 +647,15 @@ const HOUSE={door:null,doorBaseZ:6.06,peephole:null,clock:null,clockTex:null,clo
   // nightstand + alarm clock
   B(.62,.6,.55,MAT.wood,4.72,3.5,4.9,H,true,true);
   B(.58,.04,.5,LM(0x4a3628),4.72,3.42,4.9,H);
-  const clockG=new THREE.Group();clockG.position.set(4.72,3.94,4.9);clockG.rotation.y=-.35;H.add(clockG);
-  B(.42,.24,.16,LM(0x14161c),0,0,0,clockG,true);
+  const clockG=new THREE.Group();clockG.position.set(4.72,3.97,4.9);clockG.rotation.y=-.35;H.add(clockG);
+  B(.60,.34,.22,LM(0x14161c),0,0,0,clockG,true);
+  B(.64,.05,.26,LM(0x23262e),0,-.19,0,clockG);
   const cc=document.createElement('canvas');cc.width=256;cc.height=140;
   HOUSE.clockCanvas=cc;HOUSE.clockTex=new THREE.CanvasTexture(cc);
   HOUSE.clockTex.colorSpace=THREE.SRGBColorSpace;
-  const screen=new THREE.Mesh(new THREE.PlaneGeometry(.36,.19),
+  const screen=new THREE.Mesh(new THREE.PlaneGeometry(.52,.26),
     new THREE.MeshBasicMaterial({map:HOUSE.clockTex}));
-  screen.position.set(0,0,.085);clockG.add(screen);HOUSE.clock=clockG;
+  screen.position.set(0,0,.115);clockG.add(screen);HOUSE.clock=clockG;
   // wardrobe + poster + rug
   B(1.5,2.3,.62,MAT.wood,-2.2,4.35,-4.7,H,true,true);
   B(.06,2.1,.04,MAT.metal,-2.2,4.35,-4.36,H);
@@ -952,11 +953,11 @@ function setClock(t){ HOUSE.clockCanvas&&(drawClock(t)); }
 function drawClock(txt){
   const c=HOUSE.clockCanvas.getContext('2d'),W=256,H=140;
   c.fillStyle='#05070b';c.fillRect(0,0,W,H);
-  c.fillStyle='#ff7a3c';c.font='900 62px Inter, Arial, sans-serif';c.textAlign='center';c.textBaseline='middle';
+  c.fillStyle='#ff7a3c';c.font='900 70px Inter, Arial, sans-serif';c.textAlign='center';c.textBaseline='middle';
   c.shadowColor='rgba(255,110,50,.85)';c.shadowBlur=18;
   c.fillText(txt,W/2,H/2+2);c.shadowBlur=0;
-  c.font='700 20px Inter, Arial, sans-serif';c.fillStyle='#c9552a';
-  c.fillText('PM',W/2,H-24);
+  c.font='700 22px Inter, Arial, sans-serif';c.fillStyle='#c9552a';
+  c.fillText('PM',W/2,H-14);
   HOUSE.clockTex.needsUpdate=true;
 }
 drawClock('11:41');drawPhone();
@@ -1173,8 +1174,8 @@ shot(2,1.35,()=>{ setExpr(alex,'scoff');alex.tilt=-.06; },(t,d)=>{
   alex.tHeadPitch=.12;
   CAM.shake=.0016;
 });
-shot(2,1.05,()=>{ camToObject(HOUSE.clock,.42,40); },(t,d)=>{
-  camToObject(HOUSE.clock,.42,40);
+shot(2,1.05,()=>{ camToObject(HOUSE.clock,1.05,55,0,.24,0); },(t,d)=>{
+  camToObject(HOUSE.clock,1.05,55,0,.24,0);
   if(t>.05&&clockState.txt!=='11:44'){clockState.txt='11:44';drawClock('11:44');}
 });
 shot(2,1.4,()=>{
@@ -1208,7 +1209,7 @@ shot(2,1.5,()=>{ setExpr(alex,'confused');alex.tilt=.07;Sound.cloth(); },(t,d)=>
 
 /* ---------- SCENE 3 : THE KNOCK ---------- */
 shot(3,1.35,()=>{ drawClock('11:46');clockState.txt='11:46';setPhoneTime('11:46'); },(t,d)=>{
-  camToObject(HOUSE.clock,.36,38);
+  camToObject(HOUSE.clock,1.0,55,0,.22,0);
   if(t>.55&&clockState.txt!=='11:47'){clockState.txt='11:47';drawClock('11:47');setPhoneTime('11:47');Sound.tick();}
   CAM.shake=.0010;
 });
