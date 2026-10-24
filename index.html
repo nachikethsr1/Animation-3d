@@ -792,9 +792,9 @@ function updateHuman(R,dt,T){
   }else{
     R.phase=0;
     const sit=R.pose==='sit', lie=R.pose==='lie', slump=R.pose==='slump';
-    t.thL=sit?-1.42:(slump?-1.15:0); t.thR=sit?-1.42:(slump?-1.25:0);
-    t.knL=sit?1.44:(slump?1.05:.04); t.knR=sit?1.44:(slump?.95:.04);
-    t.ftL=sit?-.05:(lie?.2:0); t.ftR=sit?-.05:(lie?-.25:0);
+    t.thL=sit?-1.12:(slump?-1.15:0); t.thR=sit?-1.18:(slump?-1.25:0);
+    t.knL=sit?1.32:(slump?1.05:.04); t.knR=sit?1.36:(slump?.95:.04);
+    t.ftL=sit?-.18:(lie?.2:0); t.ftR=sit?-.15:(lie?-.25:0);
     t.shL=sit?-.10:.05; t.shR=sit?-.10:-.05;
     t.elL=sit?-.22:-.10; t.elR=sit?-.22:-.10;
     t.bob=0;t.lean=sit?.10:(slump?-.30:0);t.twist=0;t.sway=0;
@@ -1104,13 +1104,13 @@ shot(0,.95,()=>{
   const k=t/d;
   setCam([lerp(17,11,eo(k)),lerp(8.4,6.4,eo(k)),lerp(33,25,eo(k))],[lerp(0,-1,k),lerp(3.4,3.0,k),lerp(3,5,k)],lerp(48,44,k),false,7);
   alex.root.visible=false;dbl.root.visible=false;
-  alex.pose='sit';alex.root.position.set(3.4,3.2-0.0,3.5);
+  alex.pose='sit';alex.root.position.set(3.4,2.98,3.35);
 });
 
 /* ---------- SCENE 1 : THE FIRST MESSAGE ---------- */
 shot(1,1.45,()=>{
   alex.root.visible=true;
-  moveRig(alex,3.4,3.66-HIP,3.62,Math.PI);
+  moveRig(alex,3.4,2.98,3.35,Math.PI);
   alex.pose='sit';alex.armR='phone';alex.armL='phone';alex.amp=1;
   setExpr(alex,'focused');alex.tilt=0;alex.tHeadPitch=.22;alex.tHeadYaw=0;
   PHONE.msgs=[];PHONE.flash=0;setPhoneTime('11:41');drawPhone();
@@ -1178,7 +1178,7 @@ shot(2,1.05,()=>{ camToObject(HOUSE.clock,.42,40); },(t,d)=>{
 shot(2,1.4,()=>{
   // stand up and move to the window
   alex.pose='stand';alex.armR='phone';alex.armL='down';
-  moveRig(alex,2.35,3.2,5.15,0);
+  moveRig(alex,2.1,3.2,5.2,0);
   setExpr(alex,'alert');alex.tilt=0;alex.tHeadPitch=-.05;
   Sound.cloth();
   setCam([1.15,4.62,3.05],[2.5,4.55,5.9],48,true);
@@ -1198,7 +1198,7 @@ shot(2,1.5,()=>{ setExpr(alex,'confused');alex.tilt=.07;Sound.cloth(); },(t,d)=>
   const k=clamp(t/d,0,1);
   // turns away from window
   alex.tYaw=lerp(0,-1.9,eio(k));alex.root.rotation.y=alex.tYaw;
-  moveRig(alex,2.35,3.2,5.15,alex.root.rotation.y);
+  moveRig(alex,2.1,3.2,5.2,alex.root.rotation.y);
   alex.tHeadYaw=lerp(0,.35,k);alex.tHeadPitch=lerp(-.05,.12,k);
   faceCam(alex,1.15,42,.2,.02);
   alex.parts.A_R.sh.rotation.z=-.11-Math.sin(clamp(t*3,0,Math.PI))*.25;
@@ -1516,7 +1516,7 @@ function resetAll(){
   dbl.root.visible=false;alex.root.visible=false;doorShake=0;
   SCENES.forEach(s=>{s.done=true;s.spoken=false;s.useBoundary=false;});
   setExpr(alex,'focused');alex.pose='sit';alex.amp=1;
-  moveRig(alex,3.4,3.66-HIP,3.62,Math.PI);
+  moveRig(alex,3.4,2.98,3.35,Math.PI);
   CAM.snap=true;setCam([17,8.4,33],[0,3.4,3],48,true);
 }
 function play(){
