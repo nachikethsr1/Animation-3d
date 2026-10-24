@@ -801,7 +801,7 @@ function updateHuman(R,dt,T){
   }
   // arm modes override the right/left arm
   function applyArm(mode,side){
-    if(mode==='phone'){ t[side?'shR':'shL']=-1.02; t[side?'elR':'elL']=-1.42; }
+    if(mode==='phone'){ t[side?'shR':'shL']=-.65; t[side?'elR':'elL']=-1.25; }
     else if(mode==='up'){ t[side?'shR':'shL']=-.55; t[side?'elR':'elL']=-1.15; }
     else if(mode==='reach'){ t[side?'shR':'shL']=-1.28; t[side?'elR':'elL']=-.28; }
     else if(mode==='out'){ t[side?'shR':'shL']=-.15; t[side?'elR':'elL']=-.25; }
@@ -856,6 +856,7 @@ function updateHuman(R,dt,T){
   }
   // root yaw
   R.root.rotation.y=dampF(R.root.rotation.y,R.tYaw,R.still?0:8,dt);
+  if(R.phoneObj)R.phoneObj.visible=(R.armR==='phone');
 }
 function faceTo(R,x,z){ R.tYaw=Math.atan2(x-R.root.position.x,z-R.root.position.z); }
 
@@ -887,8 +888,9 @@ phoneG.add(phoneBody);
 const phoneScreen=new THREE.Mesh(new THREE.PlaneGeometry(.070,.146),new THREE.MeshBasicMaterial({map:PT}));
 phoneScreen.position.z=.0062;phoneG.add(phoneScreen);
 const phoneLight=PL(0x9fc0ff,.55,1.35,0,0,.08,phoneG);
-phoneG.position.set(0,-.02,.03);phoneG.rotation.set(-1.05,0,0);
+phoneG.position.set(0,-.03,.07);phoneG.rotation.set(1.54,0,0);
 alex.parts.A_R.hand.add(phoneG);
+alex.phoneObj=phoneG;
 alex.parts.A_L.hand.add(new THREE.Mesh(new THREE.BoxGeometry(.001,.001,.001),MAT.dark)); // keep sym
 
 function wrap(ctx,txt,max){
@@ -1111,7 +1113,7 @@ shot(0,.95,()=>{
 shot(1,1.45,()=>{
   alex.root.visible=true;
   moveRig(alex,3.4,2.98,3.35,Math.PI);
-  alex.pose='sit';alex.armR='phone';alex.armL='phone';alex.amp=1;
+  alex.pose='sit';alex.armR='phone';alex.armL='down';alex.amp=1;
   setExpr(alex,'focused');alex.tilt=0;alex.tHeadPitch=.22;alex.tHeadYaw=0;
   PHONE.msgs=[];PHONE.flash=0;setPhoneTime('11:41');drawPhone();
   setCam([2.42,4.52,1.92],[3.4,4.16,3.7],43,true);
