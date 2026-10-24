@@ -125,6 +125,27 @@
   </div>
 </div>
 
+<script>
+/* Show a readable message if the three.js module never boots (offline / CDN blocked). */
+window.__booted=false;
+(function(){
+  function show(msg){
+    if(window.__booted)return;
+    var e=document.getElementById('err');
+    if(!e)return;
+    e.textContent=msg;e.style.display='flex';
+  }
+  window.addEventListener('error',function(ev){
+    if(ev&&ev.target&&ev.target.tagName==='SCRIPT')
+      show('The 3D engine could not be downloaded (cdn.jsdelivr.net). Check your connection and reload.');
+  },true);
+  setTimeout(function(){
+    if(!window.__booted)
+      show('Still loading the 3D engine from cdn.jsdelivr.net. If nothing happens, check your connection and reload.');
+  },9000);
+})();
+</script>
+
 <script type="module">
 import * as THREE from 'three';
 
@@ -216,7 +237,7 @@ const Sound=(()=>{
    ========================================================================= */
 const Speech=(()=>{
   const synth=window.speechSynthesis;
-  let voice=null,ok=!!synth,picked=false;
+  let voice=null,ok=!!synth,picked=false,muted=false;
   const MALE=/david|daniel|james|mark|guy|male|alex|fred|george|arthur|edward|liam|noah|william|thomas|ravi|prabhat/i;
   function choose(){
     if(!synth||picked)return; const vs=synth.getVoices()||[]; if(!vs.length)return; picked=true;
@@ -230,13 +251,14 @@ const Speech=(()=>{
   if(synth){ choose(); synth.onvoiceschanged=choose; }
   return{
     get ok(){return ok;}, get voice(){choose();return voice;},
+    setMuted(m){ muted=!!m; if(m&&synth)try{synth.cancel();}catch(e){} },
     cancel(){ if(synth)try{synth.cancel();}catch(e){} },
     say(text,{rate=1.12,pitch=.95,onstart,onend,onboundary,onerr}={}){
       if(!synth){onerr&&onerr();return;}
       try{
         const u=new SpeechSynthesisUtterance(text);
         const v=voice||this.voice; if(v)u.voice=v;
-        u.rate=rate;u.pitch=pitch;u.volume=1;u.lang=(v&&v.lang)||'en-US';
+        u.rate=rate;u.pitch=pitch;u.volume=muted?0:1;u.lang=(v&&v.lang)||'en-US';
         u.onstart=()=>onstart&&onstart();
         u.onend=()=>onend&&onend();
         u.onerror=()=>{onerr&&onerr();onend&&onend();};
@@ -278,7 +300,16 @@ function chunkText(t){
    4. THREE.JS CORE
    ========================================================================= */
 const frameEl=document.getElementById('frame');
-const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+let renderer;
+try{
+  renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+}catch(e){
+  const er=document.getElementById('err');
+  er.style.display='flex';
+  er.textContent='This device/browser could not start WebGL, so the 3D short cannot play. Try a recent Chrome, Edge, Safari or Firefox with hardware acceleration enabled.';
+  window.__booted=true;
+  throw e;
+}
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
 renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
@@ -985,8 +1016,6 @@ function updateNPCs(dt,T){
     if(runners.includes(n))continue;
     if(n===slumped){ n.tHeadPitch=.42+Math.sin(T*.6)*.02; }
   }
-  // flicker fires / lamps
-  if(window.__fires){}
 }
 
 /* =========================================================================
@@ -1407,6 +1436,7 @@ const TOTAL_DUR=S.reduce((a,s)=>a+s.dur,0)+1.2;
    13. SUBTITLES
    ========================================================================= */
 const subEl=document.getElementById('subsText');
+const subsEl=document.getElementById('subs');
 let curCue=-1,curScene=-1;
 function showCue(i){
   if(i===curCue)return;curCue=i;
@@ -1421,20 +1451,25 @@ function cueByChar(si,ch){
   return 0;
 }
 function cueByTime(si,el){
-  const s=SCENES[si],dur=s.spokenDur||s.est;
+  const s=SCENES[si],dur=s.spokenDur||s.est||1;
+  const scale=dur/s.text.length;
   let acc=0;
   for(let i=0;i<s.cues.length;i++){
     const len=s.cues[i].text.length;
-    const t0=s.est*(acc/s.text.length),t1=s.est*((acc+len)/s.text.length);
+    const t0=acc*scale,t1=(acc+len)*scale;
     if(el>=t0&&el<t1)return i;
     acc+=len+1;
   }
-  return el<s.est?s.cues.length-1:-1;
+  return el<dur?s.cues.length-1:-1;
 }
 function speakScene(i){
-  const s=SCENES[i];curScene=i;curCue=-1;s.spoken=false;s.useBoundary=false;s.done=false;
+  const s=SCENES[i];curScene=i;curCue=-1;s.spoken=false;s.useBoundary=false;s.done=false;s.silent=false;
   s.speechStart=playTime;s.spokenDur=s.est;
-  if(!Speech.ok){ return; }
+  if(!Speech.ok){
+    // No speech synthesis available: spread the cues across the scene's own shot
+    // length and let the timeline run normally instead of waiting for narration.
+    s.silent=true;s.spoken=true;s.spokenDur=SCENE_DUR[i+1]||s.est;return;
+  }
   const chunks=chunkText(s.text);
   let ended=0;
   chunks.forEach((ch,k)=>{
@@ -1472,7 +1507,7 @@ function finish(){
   setTimeout(()=>{replayEl.classList.add('on');},650);
 }
 function resetAll(){
-  Speech.cancel();Sound.cancel&&0;
+  Speech.cancel();
   finished=false;playing=false;playTime=0;shotIdx=-1;shotStart=0;curCue=-1;curScene=-1;
   blackEl.classList.remove('on');peepEl.classList.remove('on');replayEl.classList.remove('on');
   subEl.textContent='';progFill.style.width='0%';
@@ -1493,12 +1528,18 @@ function play(){
 
 /* director update with narration gating */
 let holdScene=-1;
+const MAX_HOLD=2.4;   // seconds a shot may be held on its last frame waiting for narration
 function updateDirector(dt){
   if(!playing||finished)return;
   playTime+=dt;
   const sh=S[shotIdx];if(!sh)return;
   let lt=playTime-shotStart;
   if(sh.upd)sh.upd(Math.min(lt,sh.dur),sh.dur);
+  // silent mode: the cue clock is the scene's shot length, so close the scene when it elapses
+  const curScn=SCENES[sh.s-1];
+  if(curScn&&curScn.silent&&!curScn.done&&playTime-curScn.speechStart>=curScn.spokenDur){
+    curScn.done=true;showCue(-1);
+  }
   if(lt>=sh.dur){
     const next=shotIdx+1;
     if(next>=S.length){finish();return;}
@@ -1507,8 +1548,14 @@ function updateDirector(dt){
       const scn=SCENES[si];
       let done=scn?scn.done:true;
       if(scn&&!scn.done){
-        // watchdog
-        if(playTime-scn.speechStart>scn.est*1.9+3.5){scn.done=true;done=true;showCue(-1);}
+        // watchdog, plus a hard cap on how long a shot may be held for narration
+        const over=playTime-shotStart-sh.dur;
+        if(playTime-scn.speechStart>scn.est*1.9+3.5||over>MAX_HOLD){
+          // give up on the narration instead of freezing the picture, and drop the
+          // rest of it so the next scene's voice starts in sync with the visuals
+          scn.done=true;done=true;showCue(-1);
+          if(!scn.silent)Speech.cancel();
+        }
       }
       if(!done){ // hold on this shot until narration finishes
         sh.upd&&sh.upd(sh.dur,sh.dur);
@@ -1521,7 +1568,7 @@ function updateDirector(dt){
     const si=sh.s-1;const scn=SCENES[si];
     if(scn&&scn.spoken&&!scn.useBoundary&&!scn.done)showCue(cueByTime(si,playTime-scn.speechStart));
   }
-  progFill.style.width=clamp(playTime/TOTAL_DUR*100,0,100)+'%';
+  progFill.style.width=clamp(Math.min(playTime/TOTAL_DUR,finished?1:.985)*100,0,100)+'%';
 }
 
 /* =========================================================================
@@ -1536,7 +1583,7 @@ function layout(){
   renderer.setSize(w,h,false);
   camera.aspect=w/h;camera.updateProjectionMatrix();
   subEl.style.fontSize=Math.round(w*.060)+'px';
-  subEl.style.bottom=Math.round(h*.155)+'px';
+  subsEl.style.bottom=Math.round(h*.155)+'px';
 }
 window.addEventListener('resize',layout);
 layout();
@@ -1612,6 +1659,9 @@ alex.root.visible=false;dbl.root.visible=false;
 setCam([17,8.4,33],[0,3.4,3],48,true);CAM.snap=true;
 loop();
 wakeUI();
+const errEl=document.getElementById('err');
+if(errEl){errEl.style.display='none';errEl.textContent='';}
+window.__booted=true;
 </script>
 </body>
 </html>
