@@ -364,7 +364,7 @@ const housePos=[];
 
 /* trees — instanced */
 const treeSpots=[];
-(function treeSpots(){
+(function buildTrees(){
   blocks.forEach(([za,zb])=>{[1,-1].forEach(s=>{
     for(let z=za+3;z<zb-2;z+=rr(11,17))treeSpots.push([s*9.0,z,rr(.85,1.25)]);
   });});
@@ -620,7 +620,7 @@ const ARM={
 /* ---------- posing ---------- */
 function applyArm(rig,side,a,w){
   const p=rig.p,sh=side<0?p.shL:p.shR,el=side<0?p.elL:p.elR;
-  const t=side<0?a[0]:a[2], e=side<0?a[1]:a[3];
+  const t=side<0?a.L:a.R, e=side<0?a.Le:a.Re;
   sh.rotation.x=lerp(sh.rotation.x,t[0],w);
   sh.rotation.y=lerp(sh.rotation.y,t[1],w);
   sh.rotation.z=lerp(sh.rotation.z,t[2]+side*rig.base.shZ*(1-w*.6),w);
@@ -898,7 +898,7 @@ function addCar(cfg){
 const turnCar={g:null,R:5,speed:7,d0:16};
 (function(){
   const g=createCar({color:0x9fb3c4,len:4.4,wid:1.85,h:1.42,wr:.34,cabL:.46,cabOff:-.12});
-  cityRoot.add(g);turnCar.g=g;
+  cityRoot.add(g);turnCar.g=g;cars.push(g);
 })();
 addCar({color:0xc9a227,len:4.5,wid:1.86,h:1.44,wr:.34,hero:true});           // sedan Alex pushes
 addCar({color:0x3f6b52,len:4.6,wid:1.92,h:1.62,wr:.38,cabL:.52});           // SUV (hide spot)
@@ -1550,8 +1550,7 @@ function updateWorld(t){
   cars.forEach(c=>{
     if(!c.dir)return;
     const x=c.sx+c.dir[0]*c.sp*tt, z=c.sz+c.dir[1]*c.sp*tt;
-    c.g.position.set(x,groundAt(x,z)-0.0+(ROADY-groundAt(x,z))*0+c.sp===0?WALKY:ROADY,z);
-    c.g.position.y=(c.sp===0?WALKY:ROADY);
+    c.g.position.set(x,ROADY,z);
     c.g.rotation.y=c.ry;
     c.wx=x;c.wz=z;
   });
