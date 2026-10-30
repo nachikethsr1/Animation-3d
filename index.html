@@ -120,7 +120,7 @@ const easeO=t=>1-Math.pow(1-t,3);
 let _sd=987654321;
 const sr=()=>{_sd=(_sd*1664525+1013904223)%4294967296;return _sd/4294967296;};
 const rr=(a,b)=>a+sr()*(b-a);
-const V3=(a)=>new THREE.Vector3(a[0],a[1],a[2]);
+const V3=(a)=>new THREE.Vector3(a?a[0]:0,a?a[1]:0,a?a[2]:0);
 
 const DUR=48.0, FREEZE=3.2, REV=42.8, FLASHT=47.12, BLACKT=47.26;
 
@@ -620,7 +620,9 @@ const ARM={
 /* ---------- posing ---------- */
 function applyArm(rig,side,a,w){
   const p=rig.p,sh=side<0?p.shL:p.shR,el=side<0?p.elL:p.elR;
-  const t=side<0?a.L:a.R, e=side<0?a.Le:a.Re;
+  const A2=a||{};
+  const t=side<0?(A2.L||[0,0,.11]):(A2.R||[0,0,-.11]),
+        e=side<0?(A2.Le||[-.16,0,0]):(A2.Re||[-.16,0,0]);
   sh.rotation.x=lerp(sh.rotation.x,t[0],w);
   sh.rotation.y=lerp(sh.rotation.y,t[1],w);
   sh.rotation.z=lerp(sh.rotation.z,t[2]+side*rig.base.shZ*(1-w*.6),w);
@@ -847,6 +849,8 @@ const PEOPLE=[
 ];
 const peds=[];
 PEOPLE.forEach((cfg,i)=>{
+  cfg.p=cfg.p||[rr(-8,8),rr(-8,30)];cfg.f=cfg.f||[0,-1];cfg.v=cfg.v||[0,0];
+  cfg.sp=cfg.sp||0;cfg.kind=cfg.kind||'step';
   const R=createCharacter({
     skin:PAL.skin[(i*2+1)%PAL.skin.length],
     cloth:PAL.cloth[(cfg.pal!=null?cfg.pal:i)%PAL.cloth.length],
@@ -1726,8 +1730,11 @@ function updateCamera(t){
     const R=new THREE.Vector3(Math.cos(a),0,-Math.sin(a));
     const F=new THREE.Vector3(Math.sin(a),0,Math.cos(a));
     const U=new THREE.Vector3(0,1,0);
-    const mk=(v)=>new THREE.Vector3().copy(alexWorld)
-      .addScaledVector(R,v[0]).addScaledVector(U,v[1]).addScaledVector(F,v[2]);
+    const mk=(v)=>{
+      const q=Array.isArray(v)?v:(v&&v.isVector3?[v.x,v.y,v.z]:[0,0,0]);
+      return new THREE.Vector3().copy(alexWorld)
+        .addScaledVector(R,q[0]).addScaledVector(U,q[1]).addScaledVector(F,q[2]);
+    };
     camPos.copy(mk(p0)).lerp(mk(p1),e);
     camTgt.copy(mk(g0)).lerp(mk(g1),e);
   }else{
